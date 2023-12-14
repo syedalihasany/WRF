@@ -1,0 +1,186 @@
+the following header :
+mpif.h is located in the following location:
+/home/ali/.local/share/containers/storage/overlay/466af89985e3bc67a527e8fc94ba4ce3b1ff8473e756f3422b65b10f06ecd21d/diff/usr/lib/x86_64-linux-gnu/openmpi/include/mpif.h
+program expects it at:
+/usr/lib/x86_64-linux-gnu/openmpi/lib/../../fortran/gfortran-mod-15/openmpi
+I pasted the inlcude folder here:
+/usr/lib/x86_64-linux-gnu/openmpi
+but then I made the following path and pasted the include folder here:
+/usr/lib/x86_64-linux-gnu/fortran/gfortran-mod-15
+^DO NOT FOLLOW THE ABOVE mentioned steps instead follow the instructions that explain how to download the various dependencies: https://www2.mmm.ucar.edu/wrf/OnLineTutorial/compilation_tutorial.php
+
+
+
+
+
+
+
+
+############################################################### ON LIPC02 FOLLOWING STEPS GAVE THE BEST RESULTS ###############################################################
+
+
+
+mpich 3.0.2 was not making a makefile after running ./configure
+I installed various version until one of the ones worked
+mpich-4.1.2 turns out to be working correctly!
+
+I pasted netcdf.inc file in home/ali/Build_WRF/LIBRARIES/netcdf/include
+because it is expected to be there: ###############  DO NOT DO THIS!!!!!!!!!!!!!!!!!!!!!!!!
+INSTEAD:
+download netcdf-c-4.7.4 tar file 
+download netcdf-fortran-4.5.3 tar file
+and follow the rest of the instructions from here: https://www2.mmm.ucar.edu/wrf/OnLineTutorial/compilation_tutorial.php
+
+# the online tutorial mentions wrong paths for LDFLAGS and CPPFLAGS instead of the ones mentioned on the website do the folloiwng in .bashrc:
+# originally in the tutorial: LDFLAGS="-L$DIR/grib2/lib" <---wrong stuff
+LDFLAGS="-L$DIR/netcdf/lib" # <---- correct stuff
+export LDFLAGS
+
+# originally in the tutorial: CPPFLAGS="-I$DIR/grib2/include" <---wrong stuff
+CPPFLAGS="-I$DIR/netcdf/include" # <------ correct stuff
+export CPPFLAGS
+
+Your .bashrc should look something like this:
+DIR="/home/bohan/Build_WRF/LIBRARIES"
+export DIR
+
+CC="gcc"
+export CC
+
+CXX="g++"
+export CXX
+
+FC="gfortran"
+export FC
+
+FCFLAGS="-m64"
+export FCFLAGS
+
+F77="gfortran"
+export F77
+
+FFLAGS="-m64"
+export FFLAGS
+
+JASPERLIB="$DIR/grib2/lib"
+export JASPERLIB
+
+JASPERINC="$DIR/grib2/include"
+export JASPERINC
+
+#originally LDFLAGS="-L$DIR/grib2/lib"
+LDFLAGS="-L$DIR/netcdf/lib"
+export LDFLAGS
+
+#originally CPPFLAGS="-I$DIR/grib2/include"
+CPPFLAGS="-I$DIR/netcdf/include"
+export CPPFLAGS
+
+export PATH="$DIR/netcdf/bin:$PATH"
+export NETCDF="$DIR/netcdf"
+export LIBS="-lnetcdf -lz"
+export PATH="$DIR/mpich/bin:$PATH"
+ 
+
+when you git clone WRF and run ./configure it will give the following warning (just ignore this warning):
+If you REALLY want Grib2 output from WRF, modify the arch/Config.pl script.
+Right now you are not getting the Jasper lib, from the environment, compiled into WRF.
+
+configure and compile wrf using smpar option in gnu/gfortran line 
+
+next compile wps
+
+after you configure and compile WPS you will note only ungrib.exe is generated
+to create metgrid.exe and geogrid.exe 
+add the flag -fopenmp after -lnetcdff -lnetcdf in the last line of WRF_LIB in configure.wps
+or refer to the link: https://github.com/wrf-model/WPS/issues/110
+
+GEOGRID:
+to run geogrid makes changes to ref_lat long and stuff using this http://140.112.69.65/research/coawst/COAWST_TUTORIAL/training_2019/monday/werner_wps.pdf
+follow https://mmg.atm.ucdavis.edu/wp-content/uploads/2014/10/WPS-Duda.pdf for running geogrid,exe
+to check linkage of GEOGRID.TBL -> GEOGRID.TVL.ARW do the following:
+cd WPS/geogrid and then issue ls -ls
+(REMEMBER i did not add >> io_form_geogrid = 2, at end of &share section in namelist.wps this may cause issue if not I will delete this)
+
+
+UNGRIB:
+follow the slides for ungrib and onwards until linking Vtable: https://mmg.atm.ucdavis.edu/wp-content/uploads/2014/10/WPS-Duda.pdf
+link the Vtable using >>ln -sf ungrib/Variable_Tables/Vtable.GFS Vtable
+>>ls -ls #to see Vtable linked i.e Vtable -> ungrib/Variable_Tables/Vtable.GFS
+link GFS data using   >>./link_grib.csh /home/bohan/Build_WRF/DATA/
+after running ./ungrib.exe you might get the following error:
+./ungrib.exe: error while loading shared libraries: libpng12.so.0: cannot open shared object file: No such file or directory
+add the following to bashrc:
+export LD_LIBRARY_PATH=/home/bohan/Build_WRF/LIBRARIES/grib2/lib
+
+
+METGRID:
+To run metgrid
+make changes to only &metgird change >>fg_name = 'FILE' to >>fg_name = 'GFS'
+next make sure METGRID.TBL is linked to METGRID.TBL.ARW i.e. METGRID.TBL -> METGRID.TBL.ARW
+>>cd WPS/metgrid
+>>ls -ls
+
+after running ./metgrid.exe you will get output files like met_em.d01.2023-11-27_06:00:00.nc
+
+REAL:
+cd WRF/run
+copy or link output files of metgrid to here i.e. WRF/run
+make changes in namelist.input
+start and end dates for 2 domains
+parent ids 1,1
+tomorrow start from i_parent_start ===> refer to namelist.wps file in WPS directory
+if data available till xyz date 12:00 then end date should be exactly the same xyz date 12:00 cannot process for more than that:
+#(basically start end date should be the same in WPS/namelist.wps and WRF/namelist.input)
+
+mpirun -np 10 ./real.exe
+
+output will be the following files:
+inital conditions based on times and boundary conditions based on 3D space
+./wrfinput_d02
+./wrfbdy_d01
+./wrfinput_d01
+
+WRF:
+next run:
+mpirun -np 10 ./wrf.exe
+
+# ERROR: ran out of valid boundary conditions 
+read the following : https://forum.mmm.ucar.edu/threads/wrf-runs-out-of-boundary-conditions-but-at-end-of-simulation.8318/
+modify namelist.input by zeroing out the run days/hours/minutes
+
+ncview wrfout_d01_2023-11-27_05\:00\:00
+to find temperature read: https://mailman.ucar.edu/pipermail/wrf-users/2010/001896.html
+normal temperature = T + 300
+
+to find what the variables mean issue the following command:
+ncdump -h wrfout_d01_2023-11-27_05\:00\:00
+
+view output of geogrid
+go ahead and install the following
+sudo apt install ncl-ncarg
+go to: https://github.com/NCAR/WPS/blob/master/util/plotgrids_new.ncl
+download the plotsgrids_new.ncl script
+ncl /home/path/to/plotgrids.ncl 'filename="geo_em.d01.nc"'
+This will display your domain
+
+############################################################### SOME OLD ISSUES ON PERSONAL LAPTOP ###############################################################
+
+for parse error after running ungrib.exe use the following VTable: https://forum.mmm.ucar.edu/threads/resolved-read-error-1-in-parse_table-when-running-ungrib-exe.9099/
+
+metgrid.exe would not compile due to some issue with the fortran compiler (undefined reference to `nc_get_var_chunk_cache_ints')
+I got a scan_input.F file from WPS forum provided by mgduda whihc has some parts of the code commented out
+recompiling the metgrid program after overwriting the default WPS/metgrid/src/scan_input.F worked!
+reference:https://forum.mmm.ucar.edu/threads/metgrid-exe-not-created-when-compiling-wps.12386/
+
+low resolution file is incomplete therefore additional downloads would be necessary or download the full HQ file 
+
+check out solve_em.F or solve_em.f90 file in dyn_em folder
+
+ugrib.exe will not run therefore set the following variable in bashrc:
+
+export LD_LIBRARY_PATH=/home/ali/Build_WRF/LIBRARIES/grib2/lib
+
+​
+
+​
