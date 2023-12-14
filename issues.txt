@@ -3,7 +3,7 @@
 
 
 mpich 3.0.2 was not making a makefile after running ./configure
-I installed various version until one of the ones worked
+I installed various versions until one of the ones worked
 mpich-4.1.2 turns out to be working correctly!
 
 I pasted netcdf.inc file in home/ali/Build_WRF/LIBRARIES/netcdf/include
@@ -68,9 +68,9 @@ when you git clone WRF and run ./configure it will give the following warning (j
 If you REALLY want Grib2 output from WRF, modify the arch/Config.pl script.
 Right now you are not getting the Jasper lib, from the environment, compiled into WRF.
 
-configure and compile wrf using smpar option in gnu/gfortran line 
+configure and compile wrf using smpar option in the same line where it says gnu/gfortran
 
-next compile wps
+next compile WPS
 
 after you configure and compile WPS you will note only ungrib.exe is generated
 to create metgrid.exe and geogrid.exe 
