@@ -1,21 +1,3 @@
-the following header :
-mpif.h is located in the following location:
-/home/ali/.local/share/containers/storage/overlay/466af89985e3bc67a527e8fc94ba4ce3b1ff8473e756f3422b65b10f06ecd21d/diff/usr/lib/x86_64-linux-gnu/openmpi/include/mpif.h
-program expects it at:
-/usr/lib/x86_64-linux-gnu/openmpi/lib/../../fortran/gfortran-mod-15/openmpi
-I pasted the inlcude folder here:
-/usr/lib/x86_64-linux-gnu/openmpi
-but then I made the following path and pasted the include folder here:
-/usr/lib/x86_64-linux-gnu/fortran/gfortran-mod-15
-^DO NOT FOLLOW THE ABOVE mentioned steps instead follow the instructions that explain how to download the various dependencies: https://www2.mmm.ucar.edu/wrf/OnLineTutorial/compilation_tutorial.php
-
-
-
-
-
-
-
-
 ############################################################### ON LIPC02 FOLLOWING STEPS GAVE THE BEST RESULTS ###############################################################
 
 
